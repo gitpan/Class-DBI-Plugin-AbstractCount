@@ -1,50 +1,44 @@
 package Class::DBI::Plugin::AbstractCount;
 
-require 5.00502;
 use strict;
+use base 'Class::DBI::Plugin';
 use SQL::Abstract;
 
-require Exporter;
-use vars qw( $VERSION @ISA @EXPORT );
-$VERSION = '0.02';
-@ISA     = qw( Exporter );
-@EXPORT  = qw( count_search_where );
+our $VERSION = '0.03';
 
-sub import
+sub init
 {
-	my $caller = caller;
-	$caller->set_sql( count_search_where => qq{
+	my $class = shift;
+	$class->set_sql( count_search_where => qq{
 			SELECT COUNT(*)
 			FROM __TABLE__
 			%s
 		} );
-	
-	no strict 'refs';
-	*{ "$caller\::count_search_where" } =
-		sub
+}
+
+sub count_search_where : Plugged
+{
+	my $class = shift;
+	my $where = ref( $_[0] )
+		? $_[0]
+		: { @_ };
+	my $attr  = ref( $_[0] )
+		? $_[1]
+		: undef;
+	delete $attr->{order_by};
+
+	$class->can( 'retrieve_from_sql' ) or do
 		{
-			my $class = shift;
-			my $where = ref( $_[0] )
-				? $_[0]
-				: { @_ };
-			my $attr  = ref( $_[0] )
-				? $_[1]
-				: undef;
-			delete $attr->{order_by};
-
-			$class->can( 'retrieve_from_sql' ) or do
-				{
-					require Carp;
-					Carp::croak( "$class should inherit from Class::DBI >= 0.90" );
-				};
-
-			my ( $phrase, @bind ) = SQL::Abstract
-				-> new( %$attr )
-				-> where( $where );
-			$class
-				-> sql_count_search_where( $phrase )
-				-> select_val( @bind );
+			require Carp;
+			Carp::croak( "$class should inherit from Class::DBI >= 0.90" );
 		};
+
+	my ( $phrase, @bind ) = SQL::Abstract
+		-> new( %$attr )
+		-> where( $where );
+	$class
+		-> sql_count_search_where( $phrase )
+		-> select_val( @bind );
 }
 
 1;
