@@ -1,0 +1,6 @@
+Revision history for Perl extension Class::DBI::Plugin::AbstractCount.
+
+0.01  Thu Jun 10 08:49:23 2004
+	- original version; created by h2xs 1.22 with options
+		-XAn Class::DBI::Plugin::AbstractCount -b 5.5.2
+
