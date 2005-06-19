@@ -1,44 +1,61 @@
 package Class::DBI::Plugin::AbstractCount;
+# vim:set tabstop=2 shiftwidth=2 expandtab:
 
 use strict;
 use base 'Class::DBI::Plugin';
 use SQL::Abstract;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 sub init
 {
-	my $class = shift;
-	$class->set_sql( count_search_where => qq{
-			SELECT COUNT(*)
-			FROM __TABLE__
-			%s
-		} );
+  my $class = shift;
+  $class->set_sql( count_search_where => qq{
+      SELECT COUNT(*)
+      FROM __TABLE__
+      %s
+    } );
 }
 
 sub count_search_where : Plugged
 {
-	my $class = shift;
-	my $where = ref( $_[0] )
-		? $_[0]
-		: { @_ };
-	my $attr  = ref( $_[0] )
-		? $_[1]
-		: undef;
-	delete $attr->{order_by};
+  my $class = shift;
+  my %where = ();
+  my $rh_attr = {};
+  if ( ref $_[0] ) {
+    $class->_croak( "where-clause must be a hashref it it's a reference" )
+      unless ref( $_[0] ) eq 'HASH';
+    %where = %{ $_[0] };
+    $rh_attr = $_[1];
+  }
+  else {
+    $rh_attr = pop if @_ % 2;
+    %where = @_;
+  }
+  delete $rh_attr->{order_by};
 
-	$class->can( 'retrieve_from_sql' ) or do
-		{
-			require Carp;
-			Carp::croak( "$class should inherit from Class::DBI >= 0.90" );
-		};
+  $class->can( 'retrieve_from_sql' )
+    or $class->_croak( "$class should inherit from Class::DBI >= 0.95" );
+  
+  my ( %columns, %accessors ) = ();
+  for my $column ( $class->columns ) {
+    ++$columns{ $column };
+    $accessors{ $column->accessor } = $column;
+  }
 
-	my ( $phrase, @bind ) = SQL::Abstract
-		-> new( %$attr )
-		-> where( $where );
-	$class
-		-> sql_count_search_where( $phrase )
-		-> select_val( @bind );
+  for my $column ( keys %where ) {
+    next if exists $columns{ $column };
+    $where{ $accessors{ $column }} = delete $where{ $column }, next
+      if exists $accessors{ $column };
+    $class->_croak( "$column is not a column of $class" );
+  }
+
+  my ( $phrase, @bind ) = SQL::Abstract
+    -> new( %$rh_attr )
+    -> where( \%where );
+  $class
+    -> sql_count_search_where( $phrase )
+    -> select_val( @bind );
 }
 
 1;

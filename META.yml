@@ -1,12 +1,13 @@
 # http://module-build.sourceforge.net/META-spec.html
 #XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
 name:         Class-DBI-Plugin-AbstractCount
-version:      0.03
+version:      0.04
 version_from: AbstractCount.pm
 installdirs:  site
 requires:
-    Class::DBI:                    0.9
+    Class::DBI:                    0.95
     Class::DBI::Plugin:            0.02
+    SQL::Abstract:                 1.1
 
 distribution_type: module
 generated_by: ExtUtils::MakeMaker version 6.17
