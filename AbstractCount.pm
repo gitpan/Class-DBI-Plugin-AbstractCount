@@ -5,7 +5,7 @@ use strict;
 use base 'Class::DBI::Plugin';
 use SQL::Abstract;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 sub init
 {
@@ -47,6 +47,15 @@ sub count_search_where : Plugged
     next if exists $columns{ $column };
     $where{ $accessors{ $column }} = delete $where{ $column }, next
       if exists $accessors{ $column };
+
+    # Check for functions
+    if ( $column =~ /^(\w+)\(\s*(\w+)\s*\)$/ ) {
+      my ( $function_name, $extracted_column ) = ( $1, $2 );
+      next if exists $columns{ $extracted_column };
+      $where{ "$function_name( $accessors{ $extracted_column } )" } =
+        delete $where{ $column }, next
+          if exists $accessors{ $extracted_column };
+    }
     $class->_croak( "$column is not a column of $class" );
   }
 
