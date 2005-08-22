@@ -2,7 +2,7 @@
 # vim:set tabstop=2 shiftwidth=2 expandtab syn=perl:
 use strict;
 
-use Test::More tests => 10;
+use Test::More tests => 18;
 
 $main::sql = "";
 
@@ -27,7 +27,7 @@ sub select_val
   return @_;
 }
 
-sub columns { return qw( artist title release ) }
+sub columns { return qw( artist title release updated ) }
 
 sub _croak
 {
@@ -47,6 +47,10 @@ sub _croak
 {
   package release;
   sub accessor { return 'release_date' }
+}
+{
+  package updated;
+  sub accessor { return 'last_change' }
 }
 
 use Class::DBI::Plugin::AbstractCount;
@@ -90,7 +94,7 @@ is_deeply( \@bind_params, [ 'Steve Vai'
                           , 'Flexable%'
                           ], 'bind param list 3' );
 
-# Test where-clause with function-call on column name
+# Test where-clause with simple function-call on column name
 ( @bind_params ) = __PACKAGE__->count_search_where(
   { artist            => 'Adrian Belew'
   , 'YEAR( release )' => { '=', 2005 }
@@ -102,16 +106,66 @@ is_deeply( \@bind_params, [ 2005
                           , 'Adrian Belew'
                           ], 'bind param list 4' );
 
-# Test where-clause with function-call on accessor
+# Test where-clause with more complicated (nested) function-call on column name
 ( @bind_params ) = __PACKAGE__->count_search_where(
-  { artist_name            => 'Adrian Belew'
-  , 'YEAR( release_date )' => { '=', 2005 }
+  { artist            => 'Adrian Belew'
+  , 'COALESCE( release, NOW() )' => { '=', 2005 }
   } );
-like( $main::sql, qr/SELECT COUNT\(\*\)\nFROM __TABLE__\nWHERE \( YEAR\( release \) = \? AND artist = \? \)\n/i
+like( $main::sql, qr/SELECT COUNT\(\*\)\nFROM __TABLE__\nWHERE \( COALESCE\( release, NOW\(\) \) = \? AND artist = \? \)\n/i
   , 'sql statement 5'
   );
 is_deeply( \@bind_params, [ 2005
                           , 'Adrian Belew'
                           ], 'bind param list 5' );
+
+# Test where-clause with simple function-call on accessor
+( @bind_params ) = __PACKAGE__->count_search_where(
+  { artist_name            => 'Adrian Belew'
+  , 'YEAR( release_date )' => { '=', 2005 }
+  } );
+like( $main::sql, qr/SELECT COUNT\(\*\)\nFROM __TABLE__\nWHERE \( YEAR\( release \) = \? AND artist = \? \)\n/i
+  , 'sql statement 6'
+  );
+is_deeply( \@bind_params, [ 2005
+                          , 'Adrian Belew'
+                          ], 'bind param list 6' );
+
+# Test where-clause with more complicated (nested) function-call on accessor
+( @bind_params ) = __PACKAGE__->count_search_where(
+  { artist_name            => 'Adrian Belew'
+  , 'COALESCE( release_date, NOW() )' => { '=', 2005 }
+  } );
+like( $main::sql, qr/SELECT COUNT\(\*\)\nFROM __TABLE__\nWHERE \( COALESCE\( release, NOW\(\) \) = \? AND artist = \? \)\n/i
+  , 'sql statement 7'
+  );
+is_deeply( \@bind_params, [ 2005
+                          , 'Adrian Belew'
+                          ], 'bind param list 7' );
+
+# Test where-clause with more complicated (nested) function-call on multiple
+# column names
+( @bind_params ) = __PACKAGE__->count_search_where(
+  { artist            => 'Adrian Belew'
+  , 'COALESCE( release, updated, NOW() )' => { '=', 2005 }
+  } );
+like( $main::sql, qr/SELECT COUNT\(\*\)\nFROM __TABLE__\nWHERE \( COALESCE\( release, updated, NOW\(\) \) = \? AND artist = \? \)\n/i
+  , 'sql statement 8'
+  );
+is_deeply( \@bind_params, [ 2005
+                          , 'Adrian Belew'
+                          ], 'bind param list 8' );
+
+# Test where-clause with more complicated (nested) function-call on mixed
+# column and accessor names
+( @bind_params ) = __PACKAGE__->count_search_where(
+  { artist            => 'Adrian Belew'
+  , 'COALESCE( release, last_change, NOW() )' => { '=', 2005 }
+  } );
+like( $main::sql, qr/SELECT COUNT\(\*\)\nFROM __TABLE__\nWHERE \( COALESCE\( release, updated, NOW\(\) \) = \? AND artist = \? \)\n/i
+  , 'sql statement 9'
+  );
+is_deeply( \@bind_params, [ 2005
+                          , 'Adrian Belew'
+                          ], 'bind param list 9' );
 
 __END__

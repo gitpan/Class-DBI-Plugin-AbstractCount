@@ -1,9 +1,12 @@
 Revision history for Perl extension Class::DBI::Plugin::AbstractCount.
 
-0.05  Sun Aug 21 16:33:00 2005
+0.06  Mon Aug 22 16:54:00 2005
 	- fixed function-call-on-column-in-where-clause issue
+	- added eight more tests (to check function call issue)
+0.05  Sun Aug 21 16:33:00 2005
+	- improved on function-call-on-column-in-where-clause issue
 	- added four more tests (to check function call issue)
-  - changed accessor tests
+	- changed accessor tests
 0.04  Mon Jul 20 00:12:00 2005
 	- fixed column <-> accessor name issue
 	- fixed too restrictive tests (changes in SQL::Abstract)

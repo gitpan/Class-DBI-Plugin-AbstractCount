@@ -5,7 +5,7 @@ use strict;
 use base 'Class::DBI::Plugin';
 use SQL::Abstract;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 sub init
 {
@@ -43,20 +43,33 @@ sub count_search_where : Plugged
     $accessors{ $column->accessor } = $column;
   }
 
-  for my $column ( keys %where ) {
-    next if exists $columns{ $column };
-    $where{ $accessors{ $column }} = delete $where{ $column }, next
+  COLUMN: for my $column ( keys %where ) {
+    next COLUMN if exists $columns{ $column };
+    $where{ $accessors{ $column }} = delete $where{ $column }, next COLUMN
       if exists $accessors{ $column };
 
     # Check for functions
-    if ( $column =~ /^(\w+)\(\s*(\w+)\s*\)$/ ) {
-      my ( $function_name, $extracted_column ) = ( $1, $2 );
-      next if exists $columns{ $extracted_column };
-      $where{ "$function_name( $accessors{ $extracted_column } )" } =
-        delete $where{ $column }, next
-          if exists $accessors{ $extracted_column };
+    if ( index( $column, '(' )
+      && index( $column, ')' ))
+    {
+      my @tokens = ( $column =~ /(\w+(?:\s*\(\s*)?|\W+)/g );
+      TOKEN: for my $token ( @tokens ) {
+        if ( $token !~ /\W/ ) { # must be column or accessor name
+          next TOKEN if exists $columns{ $token };
+          $token = $accessors{ $token }, next TOKEN
+            if exists $accessors{ $token };
+          $class->_croak(
+            qq{"$token" is not a column/accessor of class "$class"} );
+        }
+      }
+
+      my $normalized = join "", @tokens;
+      $where{ $normalized } = delete $where{ $column }
+        if $normalized ne $column;
+      next COLUMN;
     }
-    $class->_croak( "$column is not a column of $class" );
+
+    $class->_croak( qq{"$column" is not a column/accessor of class "$class"} );
   }
 
   my ( $phrase, @bind ) = SQL::Abstract
