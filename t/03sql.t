@@ -2,7 +2,7 @@
 # vim:set tabstop=2 shiftwidth=2 expandtab syn=perl:
 use strict;
 
-use Test::More tests => 18;
+use Test::More tests => 20;
 
 $main::sql = "";
 
@@ -168,4 +168,24 @@ is_deeply( \@bind_params, [ 2005
                           , 'Adrian Belew'
                           ], 'bind param list 9' );
 
+# Test complex where-clause
+( @bind_params ) = __PACKAGE__->count_search_where(
+  -and => [ artist => 'System Of A Down'
+          , -nest  => [ -and => [ title   => { like => '%ize' }
+                                , release => 2005
+                                ]
+                      , -and => [ title   => { like => '%ize' }
+                                , release => 2006
+                                ]
+                      ]
+          ] );
+like( $main::sql, qr/SELECT COUNT\(\*\)\nFROM __TABLE__\nWHERE \( \( \( artist = \? \) AND \( \( \( \( \( title LIKE \? \) AND \( release = \? \) \) \) OR \( \( \( title LIKE \? \) AND \( release = \? \) \) \) \) \) \) \)\n/i
+  , 'sql statement 10'
+  );
+is_deeply( \@bind_params, [ 'System Of A Down'
+                          , '%ize'
+                          , 2005
+                          , '%ize'
+                          , 2006
+                          ], 'bind param list 10' );
 __END__

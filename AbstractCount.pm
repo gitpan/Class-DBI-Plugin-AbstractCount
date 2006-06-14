@@ -5,7 +5,7 @@ use strict;
 use base 'Class::DBI::Plugin';
 use SQL::Abstract;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 sub init
 {
@@ -44,15 +44,22 @@ sub count_search_where : Plugged
   }
 
   COLUMN: for my $column ( keys %where ) {
+    # Column names are (of course) OK
     next COLUMN if exists $columns{ $column };
+
+    # Accessor names are OK, but replace them with corresponding column name
     $where{ $accessors{ $column }} = delete $where{ $column }, next COLUMN
       if exists $accessors{ $column };
 
+    # SQL::Abstract keywords are OK
+    next COLUMN
+      if $column =~ /^-(?:and|or|nest|(?:(not_)?(?:like|between)))$/;
+
     # Check for functions
-    if ( index( $column, '(' )
-      && index( $column, ')' ))
+    if ( index( $column, '(' ) > 0
+      && index( $column, ')' ) > 1 )
     {
-      my @tokens = ( $column =~ /(\w+(?:\s*\(\s*)?|\W+)/g );
+      my @tokens = ( $column =~ /(-?\w+(?:\s*\(\s*)?|\W+)/g );
       TOKEN: for my $token ( @tokens ) {
         if ( $token !~ /\W/ ) { # must be column or accessor name
           next TOKEN if exists $columns{ $token };
