@@ -5,7 +5,7 @@ use strict;
 use base 'Class::DBI::Plugin';
 use SQL::Abstract;
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 sub init
 {

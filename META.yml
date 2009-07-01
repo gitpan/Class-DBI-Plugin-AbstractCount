@@ -1,13 +1,24 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         Class-DBI-Plugin-AbstractCount
-version:      0.07
-version_from: AbstractCount.pm
-installdirs:  site
+--- #YAML:1.0
+name:               Class-DBI-Plugin-AbstractCount
+version:            0.08
+abstract:           get COUNT(*) results with abstract SQL
+author:
+    - Jean-Christophe Zeus <mail@ljczeus.com>
+license:            unknown
+distribution_type:  module
+configure_requires:
+    ExtUtils::MakeMaker:  0
+build_requires:
+    ExtUtils::MakeMaker:  0
 requires:
-    Class::DBI:                    0.95
-    Class::DBI::Plugin:            0.02
-    SQL::Abstract:                 1.1
-
-distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.30
+    Class::DBI:          0.95
+    Class::DBI::Plugin:  0.02
+    SQL::Abstract:       1.5
+no_index:
+    directory:
+        - t
+        - inc
+generated_by:       ExtUtils::MakeMaker version 6.50
+meta-spec:
+    url:      http://module-build.sourceforge.net/META-spec-v1.4.html
+    version:  1.4

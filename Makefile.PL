@@ -8,7 +8,7 @@ WriteMakefile(
     PREREQ_PM         =>
 			{ 'Class::DBI'         => 0.95
 			, 'Class::DBI::Plugin' => 0.02
-			, 'SQL::Abstract'      => 1.10
+			, 'SQL::Abstract'      => 1.50
 			},
     ($] >= 5.006 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'AbstractCount.pm', # retrieve abstract from module
